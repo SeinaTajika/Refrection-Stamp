@@ -3,8 +3,9 @@
 var offsetX, offsetY, dragItem;
 var resizeHandle;
 
+//タブの挙動
 {
-  //ローカルスコープ タブの挙動
+  //ローカルスコープ
   //DOM取得
   const tabMenus = document.querySelectorAll(".tab_menu-item");
   // console.log(tabMenus);
@@ -36,7 +37,7 @@ var resizeHandle;
     tabPanelItems.forEach((tabPanelItem) => {
       tabPanelItem.classList.remove("is-show");
     });
-    
+
     // クリックされたmenu要素にis-activeクラスを付加
     e.currentTarget.classList.add("is-active");
 
@@ -59,11 +60,6 @@ function addStamp(stampType) {
   newStamp.className = "newStamp";
   newStamp.classList.add("draggable");
 
-  //リサイズハンドルを作成
-  var handle = document.createElement("div");
-  handle.classList.add("resize-handle");
-  newStamp.appendChild(handle);
-
   //work_sectionに新しいスタンプを追加
   document.getElementById("work_container").appendChild(newStamp);
 
@@ -76,6 +72,8 @@ function addStamp(stampType) {
     renderDirections: ["nw", "ne", "sw", "se"],
   });
 
+
+  //拡大縮小
   move.on("resize", ({ target, width, height }) => {
     target.style.width = width + "px";
     target.style.height = height + "px";
@@ -93,7 +91,7 @@ function startDrag(e) {
     document.addEventListener("mouseup", stopDrag);
   }
 }
-
+// ドラッグをしたとき
 function drag(e) {
   e.preventDefault();
 
@@ -109,9 +107,52 @@ function drag(e) {
 
   dragItem.style.left = x + "px";
   dragItem.style.top = y + "px";
+
+  console.log(dragItem.style.left)
 }
 
 function stopDrag() {
   document.removeEventListener("mousemove", drag);
   document.removeEventListener("mouseup", stopDrag);
 }
+
+// タッチ操作の開始
+function startTouchDrag(e) {
+  if (e.target.classList.contains("draggable")) {
+    dragItem = e.target;
+    var touch = e.touches[0];
+    var rect = dragItem.getBoundingClientRect(); // スタンプ要素の位置とサイズを取得
+    offsetX = touch.clientX - rect.left;
+    offsetY = touch.clientY - rect.top;
+    document.addEventListener("touchmove", touchDrag);
+    document.addEventListener("touchend", stopTouchDrag);
+  }
+}
+
+//タッチ操作
+// ドラッグ中のタッチ操作
+function touchDrag(e) {
+  e.preventDefault();
+
+  var touch = e.touches[0];
+  var containerRect = document.getElementById("work_container").getBoundingClientRect(); // work_containerの位置とサイズを取得
+  var x = touch.clientX - offsetX - containerRect.left; // work_container内のx座標
+  var y = touch.clientY - offsetY - containerRect.top; // work_container内のy座標
+
+  // コンテナ内での移動範囲を制限
+  x = Math.min(Math.max(x, 0), containerRect.width - dragItem.offsetWidth);
+  y = Math.min(Math.max(y, 0), containerRect.height - dragItem.offsetHeight);
+
+  dragItem.style.left = x + 'px';
+  dragItem.style.top = y + 'px';
+}
+
+// タッチ操作の終了
+function stopTouchDrag() {
+  document.removeEventListener("touchmove", touchDrag);
+  document.removeEventListener("touchend", stopTouchDrag);
+}
+
+// イベントリスナーを追加
+document.getElementById("work_container").addEventListener("mousedown", startDrag,{passive:false});
+document.getElementById("work_container").addEventListener("touchstart", startTouchDrag,{passive: false});
